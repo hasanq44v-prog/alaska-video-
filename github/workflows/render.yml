@@ -1,0 +1,23 @@
+name: Render Alaska video
+on: workflow_dispatch
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: mkdir project && unzip -q alaska_github_render.zip -d project
+      - run: sudo apt-get update && sudo apt-get install -y libnss3 libdbus-1-3 libatk1.0-0 libgbm-dev libasound2t64 libxrandr2 libxkbcommon-dev libxfixes3 libxcomposite1 libxdamage1 libatk-bridge2.0-0 libpango-1.0-0 libcairo2 libcups2 ffmpeg
+      - run: npm install
+        working-directory: project
+      - run: npx remotion render src/index.ts AlaskaPurchase out/alaska_purchase.mp4 --codec=h264 --audio-codec=aac --crf=18 --concurrency=4 --gl=swangle --timeout=240000
+        working-directory: project
+      - run: ffprobe -v error -show_entries stream=codec_name,width,height,r_frame_rate,duration -of default=nw=1 out/alaska_purchase.mp4
+        working-directory: project
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alaska_purchase_mp4
+          path: project/out/alaska_purchase.mp4
